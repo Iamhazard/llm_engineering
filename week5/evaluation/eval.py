@@ -1,7 +1,7 @@
 import sys
 import math
 from pydantic import BaseModel, Field
-from litellm import completion
+from litellm import OpenAI, completion
 from dotenv import load_dotenv
 
 from evaluation.test import TestQuestion, load_tests
@@ -9,8 +9,13 @@ from implementation.answer import answer_question, fetch_context
 
 
 load_dotenv(override=True)
+openai = OpenAI(
+    base_url="http://localhost:11434/v1",
+    api_key="ollama" 
+)
 
-MODEL = "gpt-4.1-nano"
+#MODEL = "gpt-4.1-nano"
+MODEL = "gemma4:e2b"
 db_name = "vector_db"
 
 
@@ -77,7 +82,7 @@ def calculate_ndcg(keyword: str, retrieved_docs: list, k: int = 10) -> float:
     return dcg / idcg if idcg > 0 else 0.0
 
 
-def evaluate_retrieval(test: TestQuestion, k: int = 10) -> RetrievalEval:
+def     evaluate_retrieval(test: TestQuestion, k: int = 10) -> RetrievalEval:
     """
     Evaluate retrieval performance for a test question.
 
@@ -153,7 +158,7 @@ Provide detailed feedback and scores from 1 (very poor) to 5 (ideal) for each di
     ]
 
     # Call LLM judge with structured outputs (async)
-    judge_response = completion(model=MODEL, messages=judge_messages, response_format=AnswerEval)
+    judge_response = openai.chat.completions.create(model=MODEL, messages=judge_messages, response_format=AnswerEval)
 
     answer_eval = AnswerEval.model_validate_json(judge_response.choices[0].message.content)
 
